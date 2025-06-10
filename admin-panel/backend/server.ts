@@ -9,9 +9,14 @@ import bcrypt from "bcryptjs";
 import { adminTable } from "./db/schema";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
+import multer from "multer";
+import cloudinary from "./cloudinary";
+import streamifier from "streamifier";
+import { imageTable } from "./db/schema";
 
 const app = express();
 const port = 8080;
+const upload = multer({ storage: multer.memoryStorage() });
 
 // CORS and cookie support
 app.use(
@@ -61,7 +66,6 @@ passport.use(
       secretOrKey: "hello_world",
     },
     async (payload, done) => {
-      console.log("JWT Payload:", payload);
       try {
         const admin = await db.query.adminTable.findFirst({
           where: (fields, { eq }) => eq(fields.id, payload.id),
@@ -121,6 +125,38 @@ app.post("/log-in", async (req, res, next) => {
 app.post("/log-out", (req, res) => {
   res.clearCookie("token");
   res.json({ message: "Logged out successfully" });
+});
+
+app.post("/imageUpload", upload.single("file"), async (req: any, res: any) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+    const streamUpload = (fileBuffer: Buffer): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "shopora_uploads" },
+          (error, result) => {
+            if (error) {
+              return reject(error);
+            }
+            if (!result?.secure_url) {
+              return reject(new Error("Upload failed with no URL"));
+            }
+            return resolve(result.secure_url);
+          }
+        );
+        streamifier.createReadStream(fileBuffer).pipe(stream);
+      });
+    };
+
+    const imageUrl = await streamUpload(file.buffer);
+    await db.insert(imageTable).values({ imageUrl: imageUrl });
+    res.status(200).json({ url: imageUrl });
+  } catch (err: any) {
+    res.status(500).json({ error: "Upload failed", details: err.message });
+  }
 });
 
 app.get(

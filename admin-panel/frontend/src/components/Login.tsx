@@ -5,6 +5,7 @@ import axios from "axios";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Button } from "./ui/button";
+import { toast } from "sonner";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -13,7 +14,7 @@ function Login() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      alert("Please enter both email and password");
+      toast.error("Please enter both email and password");
       return;
     }
 
@@ -28,10 +29,9 @@ function Login() {
           },
         }
       );
-      console.log("Login successful:", response.data);
-      router.push("/"); // Trigger redirect after login success
-    } catch (error: any) {
-      console.error("Login error:", error.response?.data || error.message);
+      router.push("/?login=success"); // Trigger redirect after login success
+    } catch (err) {
+      toast.error("Error Credentials");
     }
   };
 

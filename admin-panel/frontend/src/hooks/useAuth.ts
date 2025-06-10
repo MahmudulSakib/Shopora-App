@@ -5,7 +5,6 @@ import axios from "axios";
 type User = {
   id: string;
   email: string;
-  // Add other fields as needed
 };
 
 export const useAuth = () => {

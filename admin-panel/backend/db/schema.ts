@@ -8,3 +8,11 @@ export const adminTable = pgTable("admin", {
     withTimezone: true,
   }).defaultNow(),
 });
+
+export const imageTable = pgTable("image", {
+  id: uuid("id").notNull().primaryKey().defaultRandom().unique(),
+  imageUrl: text("imageUrl").notNull(),
+  createdAt: timestamp("created_at", {
+    withTimezone: true,
+  }).defaultNow(),
+});
