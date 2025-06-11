@@ -21,9 +21,9 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 
 type CarouselImage = {
-  id: string; // ✅ UUIDs are strings
+  id: string;
   imageUrl: string;
-  publicId: string; // if you're storing this too
+  publicId: string;
 };
 
 const Page = () => {
@@ -68,9 +68,9 @@ const Page = () => {
       setImages((prev) => [
         ...prev,
         {
-          id: crypto.randomUUID(), // or use `res.data.id` if returned from DB
+          id: crypto.randomUUID(),
           imageUrl: url,
-          publicId: public_id, // ✅ must be included
+          publicId: public_id,
         },
       ]);
       setFile(null);
