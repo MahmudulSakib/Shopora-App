@@ -20,7 +20,7 @@ const items = [
   },
   {
     title: "Add Products",
-    url: "#",
+    url: "/add",
     icon: Store,
   },
   {

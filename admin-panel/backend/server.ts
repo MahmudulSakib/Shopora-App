@@ -6,13 +6,14 @@ import { eq } from "drizzle-orm";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as JwtStrategy } from "passport-jwt";
 import bcrypt from "bcryptjs";
-import { adminTable } from "./db/schema";
+import { adminTable, carouselImageTable } from "./db/schema";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import multer from "multer";
 import cloudinary from "./cloudinary";
 import streamifier from "streamifier";
-import { imageTable } from "./db/schema";
+
+import { desc } from "drizzle-orm";
 
 const app = express();
 const port = 8080;
@@ -127,37 +128,49 @@ app.post("/log-out", (req, res) => {
   res.json({ message: "Logged out successfully" });
 });
 
-app.post("/imageUpload", upload.single("file"), async (req: any, res: any) => {
-  try {
+app.post(
+  "/carousel-Image-Upload",
+  upload.single("file"),
+  async (req: any, res: any) => {
     const file = req.file;
+
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-    const streamUpload = (fileBuffer: Buffer): Promise<string> => {
+
+    const streamUpload = (
+      fileBuffer: Buffer
+    ): Promise<{ url: string; public_id: string }> => {
       return new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           { folder: "shopora_uploads" },
           (error, result) => {
-            if (error) {
-              return reject(error);
-            }
-            if (!result?.secure_url) {
-              return reject(new Error("Upload failed with no URL"));
-            }
-            return resolve(result.secure_url);
+            if (error) return reject(error);
+            if (!result?.secure_url || !result.public_id)
+              return reject(new Error("Upload failed"));
+            resolve({ url: result.secure_url, public_id: result.public_id });
           }
         );
         streamifier.createReadStream(fileBuffer).pipe(stream);
       });
     };
 
-    const imageUrl = await streamUpload(file.buffer);
-    await db.insert(imageTable).values({ imageUrl: imageUrl });
-    res.status(200).json({ url: imageUrl });
-  } catch (err: any) {
-    res.status(500).json({ error: "Upload failed", details: err.message });
+    try {
+      const { url, public_id } = await streamUpload(file.buffer);
+      await db.insert(carouselImageTable).values({
+        imageUrl: url,
+        publicId: public_id,
+      });
+
+      res.status(200).json({ url: url, publicId: public_id });
+    } catch (err: any) {
+      res.status(500).json({
+        error: "Upload failed",
+        details: err instanceof Error ? err.message : "Unknown error",
+      });
+    }
   }
-});
+);
 
 app.get(
   "/protected",
@@ -166,5 +179,48 @@ app.get(
     res.json({ user: req.user });
   }
 );
+
+app.get("/carousel-images", async (req, res) => {
+  try {
+    const images = await db
+      .select()
+      .from(carouselImageTable)
+      .orderBy(desc(carouselImageTable.createdAt));
+    res.json(images);
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Unexpected error occurred";
+
+    res.status(500).json({
+      error: "Could not fetch images",
+      details: message,
+    });
+  }
+});
+
+app.delete("/carousel-Image-Delete/:id", async (req: any, res: any) => {
+  const { id } = req.params;
+
+  try {
+    const image = await db
+      .select()
+      .from(carouselImageTable)
+      .where(eq(carouselImageTable.id, id));
+
+    if (!image.length) {
+      return res.status(404).json({ error: "Image not found" });
+    }
+    const publicId = image[0].publicId;
+    await cloudinary.uploader.destroy(publicId);
+    await db.delete(carouselImageTable).where(eq(carouselImageTable.id, id));
+
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({
+      error: "Failed to delete image",
+      details: err instanceof Error ? err.message : "Unknown error",
+    });
+  }
+});
 
 app.listen(port, () => console.log(`Server is listening on port ${port}`));

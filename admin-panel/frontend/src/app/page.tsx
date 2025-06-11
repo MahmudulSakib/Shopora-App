@@ -5,21 +5,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useSearchParams } from "next/navigation";
+import AdminSidebar from "@/components/Sidebar";
 
 // ui importer
 import { toast } from "sonner";
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import items from "@/constants/navmenu";
 
 const Page = () => {
   const [url, setUrl] = useState("");
@@ -64,34 +53,13 @@ const Page = () => {
   if (!user) return null;
 
   return (
-    <div className="flex justify-start items-start">
+    <div className="flex justify-center items-center">
       <div>
-        <SidebarProvider>
-          <Sidebar>
-            <SidebarContent>
-              <SidebarGroup>
-                <SidebarGroupLabel className="font-bold">
-                  Shopora Admin Dashboard
-                </SidebarGroupLabel>
-                <SidebarGroupContent>
-                  <SidebarMenu className="gap-[20px]">
-                    {items.map((item) => (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild>
-                          <a href={item.url}>
-                            <item.icon />
-                            <span>{item.title}</span>
-                          </a>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            </SidebarContent>
-          </Sidebar>
-        </SidebarProvider>
+        <AdminSidebar />
       </div>
+      <h1 className="text-3xl font-600 font-serif text-indigo-500">
+        Welcome To Admin Dashboard
+      </h1>
     </div>
   );
 };
