@@ -20,12 +20,12 @@ const items = [
   },
   {
     title: "Add Products",
-    url: "/add",
+    url: "/add-products",
     icon: Store,
   },
   {
     title: "Products Carousel",
-    url: "#",
+    url: "/products-carousel",
     icon: GalleryHorizontal,
   },
   {

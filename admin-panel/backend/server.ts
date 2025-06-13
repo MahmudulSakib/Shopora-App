@@ -2,18 +2,16 @@ import express from "express";
 import cors from "cors";
 import passport from "passport";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as JwtStrategy } from "passport-jwt";
 import bcrypt from "bcryptjs";
-import { adminTable, carouselImageTable } from "./db/schema";
+import { adminTable, carouselImageTable, productsTable } from "./db/schema";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import multer from "multer";
 import cloudinary from "./cloudinary";
 import streamifier from "streamifier";
-
-import { desc } from "drizzle-orm";
 
 const app = express();
 const port = 8080;
@@ -102,6 +100,7 @@ passport.deserializeUser(async (id: string, done) => {
   }
 });
 
+// all post route
 app.post("/log-in", async (req, res, next) => {
   passport.authenticate("local", (err: any, user: any, info: any) => {
     if (err || !user) {
@@ -129,7 +128,7 @@ app.post("/log-out", (req, res) => {
 });
 
 app.post(
-  "/carousel-Image-Upload",
+  "/carousel-image-upload",
   upload.single("file"),
   async (req: any, res: any) => {
     const file = req.file;
@@ -172,6 +171,161 @@ app.post(
   }
 );
 
+app.post(
+  "/add-products",
+  upload.fields([
+    { name: "file", maxCount: 1 },
+    { name: "video", maxCount: 1 },
+  ]),
+  async (req: any, res: any) => {
+    const image = req.files?.file?.[0];
+    const video = req.files?.video?.[0];
+    const { name, category, price, details } = req.body;
+
+    if (!image || !name || !price || !details || !category) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const streamUpload = (
+      fileBuffer: Buffer,
+      folder: string
+    ): Promise<{ url: string; public_id: string }> => {
+      return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder },
+          (error, result) => {
+            if (error) return reject(error);
+            if (!result?.secure_url || !result.public_id)
+              return reject(new Error("Upload failed"));
+            resolve({ url: result.secure_url, public_id: result.public_id });
+          }
+        );
+        streamifier.createReadStream(fileBuffer).pipe(stream);
+      });
+    };
+
+    try {
+      const { url: imageUrl, public_id: imagePublicId } = await streamUpload(
+        image.buffer,
+        "shopora_product"
+      );
+
+      let videoUrl: string | null = null;
+      let videoPublicId: string | null = null;
+
+      if (video) {
+        const uploadedVideo = await streamUpload(
+          video.buffer,
+          "shopora_product_video"
+        );
+        videoUrl = uploadedVideo.url;
+        videoPublicId = uploadedVideo.public_id;
+      }
+
+      await db.insert(productsTable).values({
+        id: crypto.randomUUID(),
+        name,
+        category,
+        price: price.toString(),
+        details,
+        imageUrl,
+        imagePublicId,
+        videoUrl,
+        videoPublicId,
+      });
+
+      return res.status(200).json({ message: "Product uploaded successfully" });
+    } catch (err) {
+      console.error("Upload error:", err); // 👈 what's printed here?
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
+// all patch route
+app.patch(
+  "/products/:id",
+  upload.fields([
+    { name: "file", maxCount: 1 },
+    { name: "video", maxCount: 1 },
+  ]),
+  async (req: any, res: any) => {
+    const { id } = req.params;
+    const { name, category, price, details } = req.body;
+    const image = req.files?.file?.[0];
+    const video = req.files?.video?.[0];
+
+    try {
+      const product = await db
+        .select()
+        .from(productsTable)
+        .where(eq(productsTable.id, id))
+        .then((r) => r[0]);
+
+      if (!product) return res.status(404).json({ error: "Product not found" });
+
+      const updates: any = {};
+      if (name) updates.name = name;
+      if (category) updates.category = category;
+      if (price) updates.price = price.toString();
+      if (details) updates.details = details;
+
+      const streamUpload = (
+        fileBuffer: Buffer,
+        folder: string
+      ): Promise<{ url: string; public_id: string }> => {
+        return new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { folder },
+            (error: any, result: any) => {
+              if (error) return reject(error);
+              if (!result?.secure_url || !result.public_id)
+                return reject(new Error("Upload failed"));
+              resolve({ url: result.secure_url, public_id: result.public_id });
+            }
+          );
+          streamifier.createReadStream(fileBuffer).pipe(stream);
+        });
+      };
+
+      if (image) {
+        if (product.imagePublicId) {
+          await cloudinary.uploader.destroy(product.imagePublicId);
+        }
+        const { url, public_id } = await streamUpload(
+          image.buffer,
+          "shopora_product"
+        );
+        updates.imageUrl = url;
+        updates.imagePublicId = public_id;
+      }
+
+      if (video) {
+        if (product.videoPublicId) {
+          await cloudinary.uploader.destroy(product.videoPublicId);
+        }
+        const { url, public_id } = await streamUpload(
+          video.buffer,
+          "shopora_product_video"
+        );
+        updates.videoUrl = url;
+        updates.videoPublicId = public_id;
+      }
+
+      await db
+        .update(productsTable)
+        .set(updates)
+        .where(eq(productsTable.id, id));
+
+      res.json({ message: "Product updated successfully" });
+    } catch (err) {
+      console.error("Edit product error:", err);
+      res.status(500).json({ error: "Failed to update product" });
+    }
+  }
+);
+
+// all get route
 app.get(
   "/protected",
   passport.authenticate("jwt", { session: false }),
@@ -179,6 +333,16 @@ app.get(
     res.json({ user: req.user });
   }
 );
+
+app.get("/products", async (req, res) => {
+  try {
+    const products = await db.select().from(productsTable);
+    res.json(products);
+  } catch (err) {
+    console.error("Fetch products error:", err);
+    res.status(500).json({ error: "Failed to fetch products" });
+  }
+});
 
 app.get("/carousel-images", async (req, res) => {
   try {
@@ -198,7 +362,8 @@ app.get("/carousel-images", async (req, res) => {
   }
 });
 
-app.delete("/carousel-Image-Delete/:id", async (req: any, res: any) => {
+//all delete route
+app.delete("/carousel-image-delete/:id", async (req: any, res: any) => {
   const { id } = req.params;
 
   try {
@@ -220,6 +385,36 @@ app.delete("/carousel-Image-Delete/:id", async (req: any, res: any) => {
       error: "Failed to delete image",
       details: err instanceof Error ? err.message : "Unknown error",
     });
+  }
+});
+
+app.delete("/products/:id", async (req: any, res: any) => {
+  const { id } = req.params;
+  try {
+    const product = await db
+      .select()
+      .from(productsTable)
+      .where(eq(productsTable.id, id))
+      .then((r) => r[0]);
+
+    if (!product) return res.status(404).json({ error: "Product not found" });
+
+    // Delete from Cloudinary
+    const deletions = [];
+    if (product.imagePublicId)
+      deletions.push(cloudinary.uploader.destroy(product.imagePublicId));
+    if (product.videoPublicId)
+      deletions.push(cloudinary.uploader.destroy(product.videoPublicId));
+
+    await Promise.all(deletions);
+
+    // Delete from DB
+    await db.delete(productsTable).where(eq(productsTable.id, id));
+
+    res.json({ message: "Product deleted successfully" });
+  } catch (err) {
+    console.error("Delete product error:", err);
+    res.status(500).json({ error: "Failed to delete product" });
   }
 });
 

@@ -40,6 +40,7 @@ const Page = () => {
       .then((res) => setImages(res.data))
       .catch((err) => console.error("Error fetching images:", err));
   }, []);
+
   useEffect(() => {
     if (!loading && !user) router.push("/log-in");
   }, [user, loading, router]);
@@ -56,7 +57,7 @@ const Page = () => {
 
     try {
       const res = await axios.post(
-        "http://localhost:8080/carousel-Image-Upload",
+        "http://localhost:8080/carousel-image-upload",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -84,14 +85,13 @@ const Page = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      await axios.delete(`http://localhost:8080/carousel-Image-Delete/${id}`, {
+      await axios.delete(`http://localhost:8080/carousel-image-delete/${id}`, {
         withCredentials: true,
       });
 
       // Filter it from UI
       setImages((prev) => prev.filter((img) => img.id !== id));
     } catch (err) {
-      console.error("Delete failed:", err);
       alert("Failed to delete image");
     }
   };

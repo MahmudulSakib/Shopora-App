@@ -24,9 +24,12 @@ export const carouselImageTable = pgTable("carousel_image", {
 export const productsTable = pgTable("products", {
   id: uuid("id").notNull().primaryKey().unique(),
   name: text("productName").notNull(),
+  category: text("category").notNull(),
   price: numeric("price").notNull(),
   details: text("details").notNull(),
   imageUrl: text("imageUrl"),
+  imagePublicId: text("imagePublicId"),
   videoUrl: text("videoUrl"),
+  videoPublicId: text("videoPublicId"),
   createdAt: timestamp("created").defaultNow(),
 });
