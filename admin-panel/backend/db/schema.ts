@@ -33,3 +33,33 @@ export const productsTable = pgTable("products", {
   videoPublicId: text("videoPublicId"),
   createdAt: timestamp("created").defaultNow(),
 });
+
+export const productsCarouselTable = pgTable("products_carousel", {
+  id: uuid("id").notNull().primaryKey().unique(),
+  productId: uuid("productId")
+    .references(() => productsTable.id)
+    .notNull(),
+  createdAt: timestamp("created").defaultNow(),
+});
+
+export const productsCarouselBestSellingTable = pgTable(
+  "products_carousel_two",
+  {
+    id: uuid("id").notNull().primaryKey().unique(),
+    productId: uuid("productId")
+      .references(() => productsTable.id)
+      .notNull(),
+    createdAt: timestamp("created").defaultNow(),
+  }
+);
+
+export const productsCarouselTopRatedTable = pgTable(
+  "products_carousel_three",
+  {
+    id: uuid("id").notNull().primaryKey().unique(),
+    productId: uuid("productId")
+      .references(() => productsTable.id)
+      .notNull(),
+    createdAt: timestamp("created").defaultNow(),
+  }
+);

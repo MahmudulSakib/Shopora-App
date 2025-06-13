@@ -6,12 +6,20 @@ import { eq, desc } from "drizzle-orm";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as JwtStrategy } from "passport-jwt";
 import bcrypt from "bcryptjs";
-import { adminTable, carouselImageTable, productsTable } from "./db/schema";
+import {
+  adminTable,
+  carouselImageTable,
+  productsTable,
+  productsCarouselTable,
+  productsCarouselBestSellingTable,
+  productsCarouselTopRatedTable,
+} from "./db/schema";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import multer from "multer";
 import cloudinary from "./cloudinary";
 import streamifier from "streamifier";
+import { alias } from "drizzle-orm/pg-core";
 
 const app = express();
 const port = 8080;
@@ -100,7 +108,8 @@ passport.deserializeUser(async (id: string, done) => {
   }
 });
 
-// all post route
+// ______________________All Post Route_______________________
+
 app.post("/log-in", async (req, res, next) => {
   passport.authenticate("local", (err: any, user: any, info: any) => {
     if (err || !user) {
@@ -242,7 +251,110 @@ app.post(
   }
 );
 
-// all patch route
+app.post("/add-to-carousel-newArrival", async (req: any, res: any) => {
+  try {
+    const { productId } = req.body;
+    if (!productId) {
+      return res.status(400).json({ error: "Product ID required" });
+    }
+    const product = await db.query.productsTable.findFirst({
+      where: (fields, { eq }) => eq(fields.id, productId),
+    });
+    if (!product) {
+      return res.status(404).json({ error: "Product not found in database" });
+    }
+    const exists = await db.query.productsCarouselTable.findFirst({
+      where: (fields, { eq }) => eq(fields.productId, productId),
+    });
+    if (exists) {
+      return res.status(400).json({ error: "Product already in carousel" });
+    }
+    await db.insert(productsCarouselTable).values({
+      id: crypto.randomUUID(),
+      productId,
+    });
+    res.status(200).json({ message: "Product added to carousel" });
+  } catch (err: any) {
+    res
+      .status(500)
+      .json({ error: "Internal server error", message: err.message });
+  }
+});
+
+app.post("/add-to-carousel-bestSelling", async (req: any, res: any) => {
+  try {
+    const { productId } = req.body;
+    if (!productId) {
+      return res.status(400).json({ error: "Product ID required" });
+    }
+
+    const product = await db.query.productsTable.findFirst({
+      where: (fields, { eq }) => eq(fields.id, productId),
+    });
+    if (!product) {
+      return res.status(404).json({ error: "Product not found in database" });
+    }
+
+    const exists = await db.query.productsCarouselBestSellingTable.findFirst({
+      where: (fields, { eq }) => eq(fields.productId, productId),
+    });
+    if (exists) {
+      return res
+        .status(400)
+        .json({ error: "Product already in best selling carousel" });
+    }
+
+    await db.insert(productsCarouselBestSellingTable).values({
+      id: crypto.randomUUID(),
+      productId,
+    });
+
+    res.status(200).json({ message: "Product added to best selling carousel" });
+  } catch (err: any) {
+    res
+      .status(500)
+      .json({ error: "Internal server error", message: err.message });
+  }
+});
+
+app.post("/add-to-carousel-topRated", async (req: any, res: any) => {
+  try {
+    const { productId } = req.body;
+    if (!productId) {
+      return res.status(400).json({ error: "Product ID required" });
+    }
+
+    const product = await db.query.productsTable.findFirst({
+      where: (fields, { eq }) => eq(fields.id, productId),
+    });
+    if (!product) {
+      return res.status(404).json({ error: "Product not found in database" });
+    }
+
+    const exists = await db.query.productsCarouselTopRatedTable.findFirst({
+      where: (fields, { eq }) => eq(fields.productId, productId),
+    });
+    if (exists) {
+      return res
+        .status(400)
+        .json({ error: "Product already in top rated carousel" });
+    }
+
+    await db.insert(productsCarouselTopRatedTable).values({
+      id: crypto.randomUUID(),
+      productId,
+    });
+
+    res.status(200).json({ message: "Product added to top rated carousel" });
+  } catch (err: any) {
+    res
+      .status(500)
+      .json({ error: "Internal server error", message: err.message });
+  }
+});
+
+// ___________________All Patch Route_____________________
+
 app.patch(
   "/products/:id",
   upload.fields([
@@ -325,7 +437,8 @@ app.patch(
   }
 );
 
-// all get route
+// ________________________All Get Route________________________
+
 app.get(
   "/protected",
   passport.authenticate("jwt", { session: false }),
@@ -334,9 +447,22 @@ app.get(
   }
 );
 
+// app.get("/products", async (req, res) => {
+//   try {
+//     const products = await db.select().from(productsTable);
+//     res.json(products);
+//   } catch (err) {
+//     console.error("Fetch products error:", err);
+//     res.status(500).json({ error: "Failed to fetch products" });
+//   }
+// });
+
 app.get("/products", async (req, res) => {
   try {
-    const products = await db.select().from(productsTable);
+    const products = await db
+      .select()
+      .from(productsTable)
+      .orderBy(desc(productsTable.createdAt));
     res.json(products);
   } catch (err) {
     console.error("Fetch products error:", err);
@@ -362,7 +488,52 @@ app.get("/carousel-images", async (req, res) => {
   }
 });
 
-//all delete route
+app.get("/carousel-products-newArrival", async (req, res) => {
+  try {
+    const carousel = alias(productsCarouselTable, "carousel");
+    const product = alias(productsTable, "product");
+    const result = await db
+      .select()
+      .from(carousel)
+      .innerJoin(product, () => eq(carousel.productId, product.id))
+      .orderBy(desc(carousel.createdAt));
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ error: "Internal Server Error", details: err });
+  }
+});
+
+app.get("/carousel-products-bestSelling", async (req, res) => {
+  try {
+    const carousel = alias(productsCarouselBestSellingTable, "carousel");
+    const product = alias(productsTable, "product");
+    const result = await db
+      .select()
+      .from(carousel)
+      .innerJoin(product, () => eq(carousel.productId, product.id))
+      .orderBy(desc(carousel.createdAt));
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ error: "Internal Server Error", details: err });
+  }
+});
+
+app.get("/carousel-products-topRated", async (req, res) => {
+  try {
+    const carousel = alias(productsCarouselTopRatedTable, "carousel");
+    const product = alias(productsTable, "product");
+    const result = await db
+      .select()
+      .from(carousel)
+      .innerJoin(product, () => eq(carousel.productId, product.id))
+      .orderBy(desc(carousel.createdAt));
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ error: "Internal Server Error", details: err });
+  }
+});
+
+// ______________________All Delete Route___________________________
 app.delete("/carousel-image-delete/:id", async (req: any, res: any) => {
   const { id } = req.params;
 
@@ -415,6 +586,48 @@ app.delete("/products/:id", async (req: any, res: any) => {
   } catch (err) {
     console.error("Delete product error:", err);
     res.status(500).json({ error: "Failed to delete product" });
+  }
+});
+
+app.delete("/carousel-products-newArrival/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await db
+      .delete(productsCarouselTable)
+      .where(eq(productsCarouselTable.id, id));
+
+    res.status(200).json({ message: "Deleted from carousel" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete carousel product" });
+  }
+});
+
+app.delete("/carousel-products-bestSelling/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await db
+      .delete(productsCarouselBestSellingTable)
+      .where(eq(productsCarouselBestSellingTable.id, id));
+
+    res.status(200).json({ message: "Deleted from best selling carousel" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete best selling product" });
+  }
+});
+
+app.delete("/carousel-products-topRated/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await db
+      .delete(productsCarouselTopRatedTable)
+      .where(eq(productsCarouselTopRatedTable.id, id));
+
+    res.status(200).json({ message: "Deleted from top rated carousel" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete top rated product" });
   }
 });
 
