@@ -13,6 +13,9 @@ import {
   productsCarouselTable,
   productsCarouselBestSellingTable,
   productsCarouselTopRatedTable,
+  newArrivalCardTable,
+  newBestSellingCardTable,
+  newTopRatedCardTable,
 } from "./db/schema";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
@@ -20,16 +23,26 @@ import multer from "multer";
 import cloudinary from "./cloudinary";
 import streamifier from "streamifier";
 import { alias } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 const app = express();
 const port = 8080;
 const upload = multer({ storage: multer.memoryStorage() });
 
-// CORS and cookie support
+const allowedOrigins = ["http://localhost:3000", "http://localhost:3001"];
+
 app.use(
   cors({
-    origin: "http://localhost:3000", // Frontend origin
-    credentials: true, // Allow credentials (cookies)
+    origin: (origin, callback) => {
+      // allow requests with no origin (like curl or Postman)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
   })
 );
 app.use(express.json());
@@ -353,6 +366,117 @@ app.post("/add-to-carousel-topRated", async (req: any, res: any) => {
   }
 });
 
+app.post("/add-to-card-newArrival", async (req: any, res: any) => {
+  try {
+    const { productId } = req.body;
+    if (!productId)
+      return res.status(400).json({ error: "Product ID required" });
+
+    const product = await db.query.productsTable.findFirst({
+      where: (fields, { eq }) => eq(fields.id, productId),
+    });
+    if (!product)
+      return res.status(404).json({ error: "Product not found in database" });
+
+    const exists = await db.query.newArrivalCardTable.findFirst({
+      where: (fields, { eq }) => eq(fields.productId, productId),
+    });
+    if (exists)
+      return res
+        .status(400)
+        .json({ error: "Product already in new arrival card" });
+
+    const current = await db.select().from(newArrivalCardTable);
+    if (current.length >= 6)
+      return res.status(400).json({ error: "Maximum 6 products allowed" });
+
+    await db.insert(newArrivalCardTable).values({
+      id: crypto.randomUUID(),
+      productId,
+    });
+
+    res.status(200).json({ message: "Product added to new arrival card" });
+  } catch (err: any) {
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", message: err.message });
+  }
+});
+
+app.post("/add-to-card-bestSelling", async (req: any, res: any) => {
+  try {
+    const { productId } = req.body;
+    if (!productId)
+      return res.status(400).json({ error: "Product ID required" });
+
+    const product = await db.query.productsTable.findFirst({
+      where: (fields, { eq }) => eq(fields.id, productId),
+    });
+    if (!product)
+      return res.status(404).json({ error: "Product not found in database" });
+
+    const exists = await db.query.newBestSellingCardTable.findFirst({
+      where: (fields, { eq }) => eq(fields.productId, productId),
+    });
+    if (exists)
+      return res
+        .status(400)
+        .json({ error: "Product already in best selling card" });
+
+    const current = await db.select().from(newBestSellingCardTable);
+    if (current.length >= 6)
+      return res.status(400).json({ error: "Maximum 6 products allowed" });
+
+    await db.insert(newBestSellingCardTable).values({
+      id: crypto.randomUUID(),
+      productId,
+    });
+
+    res.status(200).json({ message: "Product added to best selling card" });
+  } catch (err: any) {
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", message: err.message });
+  }
+});
+
+app.post("/add-to-card-topRated", async (req: any, res: any) => {
+  try {
+    const { productId } = req.body;
+    if (!productId)
+      return res.status(400).json({ error: "Product ID required" });
+
+    const product = await db.query.productsTable.findFirst({
+      where: (fields, { eq }) => eq(fields.id, productId),
+    });
+    if (!product)
+      return res.status(404).json({ error: "Product not found in database" });
+
+    const exists = await db.query.newTopRatedCardTable.findFirst({
+      where: (fields, { eq }) => eq(fields.productId, productId),
+    });
+    if (exists)
+      return res
+        .status(400)
+        .json({ error: "Product already in top rated card" });
+
+    const current = await db.select().from(newTopRatedCardTable);
+    if (current.length >= 6)
+      return res.status(400).json({ error: "Maximum 6 products allowed" });
+
+    await db.insert(newTopRatedCardTable).values({
+      id: crypto.randomUUID(),
+      productId,
+    });
+
+    res.status(200).json({ message: "Product added to top rated card" });
+  } catch (err: any) {
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", message: err.message });
+  }
+});
+
 // ___________________All Patch Route_____________________
 
 app.patch(
@@ -447,22 +571,40 @@ app.get(
   }
 );
 
-// app.get("/products", async (req, res) => {
-//   try {
-//     const products = await db.select().from(productsTable);
-//     res.json(products);
-//   } catch (err) {
-//     console.error("Fetch products error:", err);
-//     res.status(500).json({ error: "Failed to fetch products" });
-//   }
-// });
-
 app.get("/products", async (req, res) => {
   try {
     const products = await db
       .select()
       .from(productsTable)
       .orderBy(desc(productsTable.createdAt));
+    res.json(products);
+  } catch (err) {
+    console.error("Fetch products error:", err);
+    res.status(500).json({ error: "Failed to fetch products" });
+  }
+});
+
+// backend - GET /products?q=searchTerm
+app.get("/products-for-searchbox", async (req, res) => {
+  const query = req.query.q?.toString().trim() || "";
+
+  try {
+    const products = await db
+      .select({
+        id: productsTable.id,
+        name: productsTable.name,
+        price: productsTable.price,
+        imageUrl: productsTable.imageUrl, // include this
+      })
+      .from(productsTable)
+      .where(
+        query
+          ? sql`${productsTable.name} ILIKE ${"%" + query + "%"}`
+          : undefined
+      )
+      .orderBy(desc(productsTable.createdAt))
+      .limit(5);
+
     res.json(products);
   } catch (err) {
     console.error("Fetch products error:", err);
@@ -533,7 +675,59 @@ app.get("/carousel-products-topRated", async (req, res) => {
   }
 });
 
-// ______________________All Delete Route___________________________
+app.get("/card-products-newArrival", async (req: any, res: any) => {
+  try {
+    const carousel = alias(newArrivalCardTable, "carousel");
+    const product = alias(productsTable, "product");
+
+    const result = await db
+      .select()
+      .from(carousel)
+      .innerJoin(product, () => eq(carousel.productId, product.id))
+      .orderBy(desc(carousel.createdAt));
+
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ error: "Internal Server Error", details: err });
+  }
+});
+
+app.get("/card-products-bestSelling", async (req: any, res: any) => {
+  try {
+    const carousel = alias(newBestSellingCardTable, "carousel");
+    const product = alias(productsTable, "product");
+
+    const result = await db
+      .select()
+      .from(carousel)
+      .innerJoin(product, () => eq(carousel.productId, product.id))
+      .orderBy(desc(carousel.createdAt));
+
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ error: "Internal Server Error", details: err });
+  }
+});
+
+app.get("/card-products-topRated", async (req: any, res: any) => {
+  try {
+    const carousel = alias(newTopRatedCardTable, "carousel");
+    const product = alias(productsTable, "product");
+
+    const result = await db
+      .select()
+      .from(carousel)
+      .innerJoin(product, () => eq(carousel.productId, product.id))
+      .orderBy(desc(carousel.createdAt));
+
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ error: "Internal Server Error", details: err });
+  }
+});
+
+// ________________________All Delete Route___________________________
+
 app.delete("/carousel-image-delete/:id", async (req: any, res: any) => {
   const { id } = req.params;
 
@@ -628,6 +822,40 @@ app.delete("/carousel-products-topRated/:id", async (req, res) => {
     res.status(200).json({ message: "Deleted from top rated carousel" });
   } catch (err) {
     res.status(500).json({ error: "Failed to delete top rated product" });
+  }
+});
+
+app.delete("/card-products-newArrival/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.delete(newArrivalCardTable).where(eq(newArrivalCardTable.id, id));
+    res.status(200).json({ message: "Deleted from new arrival card" });
+  } catch (err) {
+    res.status(500).json({ error: "Delete failed", details: err });
+  }
+});
+
+app.delete("/card-products-bestSelling/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db
+      .delete(newBestSellingCardTable)
+      .where(eq(newBestSellingCardTable.id, id));
+    res.status(200).json({ message: "Deleted from best selling card" });
+  } catch (err) {
+    res.status(500).json({ error: "Delete failed", details: err });
+  }
+});
+
+app.delete("/card-products-topRated/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db
+      .delete(newTopRatedCardTable)
+      .where(eq(newTopRatedCardTable.id, id));
+    res.status(200).json({ message: "Deleted from top rated card" });
+  } catch (err) {
+    res.status(500).json({ error: "Delete failed", details: err });
   }
 });
 

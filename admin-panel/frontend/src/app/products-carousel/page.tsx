@@ -119,7 +119,7 @@ const Page = () => {
             <SelectTrigger className="w-full bg-white">
               <SelectValue placeholder="Select a product" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-60 overflow-y-auto">
               {products.map((product) => (
                 <SelectItem key={product.id} value={product.id}>
                   <div className="flex items-center gap-2">
@@ -173,7 +173,7 @@ const Page = () => {
             <SelectTrigger className="w-full bg-white">
               <SelectValue placeholder="Select a product" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-60 overflow-y-auto">
               {products.map((product) => (
                 <SelectItem key={product.id} value={product.id}>
                   <div className="flex items-center gap-2">
@@ -227,7 +227,7 @@ const Page = () => {
             <SelectTrigger className="w-full bg-white">
               <SelectValue placeholder="Select a product" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-60 overflow-y-auto">
               {products.map((product) => (
                 <SelectItem key={product.id} value={product.id}>
                   <div className="flex items-center gap-2">

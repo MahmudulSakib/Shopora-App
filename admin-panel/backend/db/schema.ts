@@ -63,3 +63,27 @@ export const productsCarouselTopRatedTable = pgTable(
     createdAt: timestamp("created").defaultNow(),
   }
 );
+
+export const newArrivalCardTable = pgTable("new_arrival_card", {
+  id: uuid("id").notNull().primaryKey().unique(),
+  productId: uuid("productId")
+    .references(() => productsTable.id)
+    .notNull(),
+  createdAt: timestamp("created").defaultNow(),
+});
+
+export const newBestSellingCardTable = pgTable("new_bestselling_card", {
+  id: uuid("id").notNull().primaryKey().unique(),
+  productId: uuid("productId")
+    .references(() => productsTable.id)
+    .notNull(),
+  createdAt: timestamp("created").defaultNow(),
+});
+
+export const newTopRatedCardTable = pgTable("new_toprated_card", {
+  id: uuid("id").notNull().primaryKey().unique(),
+  productId: uuid("productId")
+    .references(() => productsTable.id)
+    .notNull(),
+  createdAt: timestamp("created").defaultNow(),
+});

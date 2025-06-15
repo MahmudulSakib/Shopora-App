@@ -30,7 +30,7 @@ const items = [
   },
   {
     title: "Products Card",
-    url: "#",
+    url: "/products-card",
     icon: ClipboardX,
   },
   {
