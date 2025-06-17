@@ -9,7 +9,7 @@
 - Next.js (Frontend)
 - Node.js (Backend)
 - Express
-- Stripe (Paymen Integration)
+- Stripe (Payment Integration)
 - Passport-local (Authentication)
 - Passport-Jwt (Authorization)
 - Drizzle ORM
