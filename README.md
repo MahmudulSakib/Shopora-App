@@ -17,7 +17,7 @@
 - Cloudinary (Cloud Database)
 - Multer
 - Shadcn UI (Component Library)
-- Magic Ui (Animation Library)
+- Magic UI (Animation Library)
 - TailwindCSS
 
 ### 👨‍💻 Developed By
