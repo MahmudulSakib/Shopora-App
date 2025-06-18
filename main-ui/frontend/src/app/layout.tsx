@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "sonner";
+import UserChat from "@/components/UserChat";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-slate-100 sm:pl-10 sm:pr-10 xl:pl-40 xl:pr-40">
         {children}
+        <UserChat />
         <Toaster position="bottom-right" richColors />
       </body>
     </html>

@@ -12,6 +12,7 @@
 - Stripe (Payment Integration)
 - Passport-local (Authentication)
 - Passport-Jwt (Authorization)
+- Socket.io (Real Time Chatting With Client)
 - Drizzle ORM
 - Postgresql (Root Database)
 - Cloudinary (Cloud Database)
@@ -34,6 +35,7 @@ Mahmudul Hasan Sakib
 
 ![Screenshot of Shopora App](./main-ui/web-pic/1.png)
 ![Screenshot of Shopora App](./main-ui/web-pic/2.png)
+![Screenshot of Shopora App](./main-ui/web-pic/32.png)
 ![Screenshot of Shopora App](./main-ui/web-pic/10.png)
 ![Screenshot of Shopora App](./main-ui/web-pic/5.png)
 ![Screenshot of Shopora App](./main-ui/web-pic/6.png)
@@ -50,6 +52,7 @@ Mahmudul Hasan Sakib
 ![Screenshot of Shopora App](./main-ui/web-pic/14.png)
 ![Screenshot of Shopora App](./main-ui/web-pic/15.png)
 ![Screenshot of Shopora App](./main-ui/web-pic/16.png)
+![Screenshot of Shopora App](./main-ui/web-pic/31.png)
 
 ### Backend UI
 
