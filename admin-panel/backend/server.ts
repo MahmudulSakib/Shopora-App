@@ -32,9 +32,21 @@ import { alias } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import Stripe from "stripe";
 import { v4 as uuidv4 } from "uuid";
+import { Server } from "socket.io";
+import http from "http";
 
 const app = express();
 const port = 8080;
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: ["http://localhost:3000", "http://localhost:3001"], // ✅ allow both
+    credentials: true,
+  },
+});
+
+const users = new Map();
+
 const upload = multer({ storage: multer.memoryStorage() });
 
 const stripe = new Stripe(
@@ -1608,4 +1620,36 @@ app.delete("/admin/reviews/:id", async (req, res) => {
   }
 });
 
-app.listen(port, () => console.log(`Server is listening on port ${port}`));
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+
+  socket.on("register", (email) => {
+    users.set(socket.id, email);
+    console.log(`Registered: ${email}`);
+    io.emit("activeUsers", Array.from(new Set(users.values())));
+  });
+
+  socket.on("message", ({ to, from, message }) => {
+    console.log(`Message from ${from} to ${to}: ${message}`);
+
+    for (const [socketId, email] of users.entries()) {
+      if (email === to) {
+        io.to(socketId).emit("message", { from, to, message });
+      }
+    }
+
+    for (const [socketId, email] of users.entries()) {
+      if (email === from) {
+        io.to(socketId).emit("message", { from, to, message });
+      }
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Disconnected:", socket.id);
+    users.delete(socket.id);
+    io.emit("activeUsers", Array.from(new Set(users.values())));
+  });
+});
+
+server.listen(port, () => console.log(`Server is listening on port ${port}`));

@@ -40,7 +40,7 @@ const items = [
   },
   {
     title: "Chat Box",
-    url: "#",
+    url: "/adminpanelchat",
     icon: MessageCircleMore,
   },
   {
