@@ -63,8 +63,8 @@ Mahmudul Hasan Sakib
 ![Screenshot of Shopora App](./main-ui/web-pic/22.png)
 ![Screenshot of Shopora App](./main-ui/web-pic/23.png)
 ![Screenshot of Shopora App](./main-ui/web-pic/24.png)
-![Screenshot of Shopora App](./main-ui/web-pic/27.png)
 ![Screenshot of Shopora App](./main-ui/web-pic/31.png)
+![Screenshot of Shopora App](./main-ui/web-pic/27.png)
 
 ### Stripe Dashboard
 
