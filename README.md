@@ -25,9 +25,6 @@
 
 Mahmudul Hasan Sakib
 
-> [!IMPORTANT]
-> For security purpose backend code is not uploaded
-
 > [!CAUTION]
 > All rights are reserved ©️ Mahmudul Hasan Sakib
 
