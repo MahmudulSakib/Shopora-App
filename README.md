@@ -28,6 +28,7 @@ Mahmudul Hasan Sakib
 > [!CAUTION]
 > All rights are reserved ©️ Mahmudul Hasan Sakib
 
+
 ### Frontend UI
 
 ![Screenshot of Shopora App](./main-ui/web-pic/1.png)
@@ -45,8 +46,8 @@ Mahmudul Hasan Sakib
 ![Screenshot of Shopora App](./main-ui/web-pic/4.png)
 ![Screenshot of Shopora App](./main-ui/web-pic/11.png)
 ![Screenshot of Shopora App](./main-ui/web-pic/12.png)
-![Screenshot of Shopora App](./main-ui/web-pic/13.png)
-![Screenshot of Shopora App](./main-ui/web-pic/14.png)
+![Screenshot of Shopora App](./main-ui/web-pic/113.png)
+![Screenshot of Shopora App](./main-ui/web-pic/114.png)
 ![Screenshot of Shopora App](./main-ui/web-pic/15.png)
 ![Screenshot of Shopora App](./main-ui/web-pic/16.png)
 
@@ -59,9 +60,9 @@ Mahmudul Hasan Sakib
 ![Screenshot of Shopora App](./main-ui/web-pic/21.png)
 ![Screenshot of Shopora App](./main-ui/web-pic/22.png)
 ![Screenshot of Shopora App](./main-ui/web-pic/23.png)
-![Screenshot of Shopora App](./main-ui/web-pic/24.png)
-![Screenshot of Shopora App](./main-ui/web-pic/31.png)
-![Screenshot of Shopora App](./main-ui/web-pic/27.png)
+![Screenshot of Shopora App](./main-ui/web-pic/124.png)
+![Screenshot of Shopora App](./main-ui/web-pic/131.png)
+![Screenshot of Shopora App](./main-ui/web-pic/127.png)
 
 ### Stripe Dashboard
 
