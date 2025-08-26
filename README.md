@@ -44,7 +44,6 @@ Mahmudul Hasan Sakib
 ![Screenshot of Shopora App](./main-ui/web-pic/26.png)
 ![Screenshot of Shopora App](./main-ui/web-pic/3.png)
 ![Screenshot of Shopora App](./main-ui/web-pic/4.png)
-![Screenshot of Shopora App](./main-ui/web-pic/11.png)
 ![Screenshot of Shopora App](./main-ui/web-pic/12.png)
 ![Screenshot of Shopora App](./main-ui/web-pic/113.png)
 ![Screenshot of Shopora App](./main-ui/web-pic/114.png)
