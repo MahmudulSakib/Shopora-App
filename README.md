@@ -1,9 +1,6 @@
-# Shopora An E-Commrce Web App
-
-### With fully custimizable front-end powered by backend
+# Shopora A Full-Fledge E-commerce Web App with powered by Next.js & Node.js
 
 ## ⚙️Tech Stack
-
 - Typescript
 - Javascript
 - Next.js (Frontend)
@@ -20,12 +17,19 @@
 - Magic Ui (Animation Library)
 - TailwindCSS
 
-### 👨‍💻 Developed By
+## How to Run Frontend (Main UI & Admin UI & Server)
 
-Mahmudul Hasan Sakib
+1.  **Install packages:**
+    npm install
+2.  Create .env.local
+    Set Environmental Variables
+3.  **Run the project:** from both directory terminal
+    npm run dev
+4.  Open `http://localhost:3000 & http://localhost:3001
+5.  **Run the Server:**
+    nodemon server.ts
 
-> [!IMPORTANT]
-> For security purpose backend code is not uploaded
+### Developed by Mahmudul Hasan Sakib & Yeasin Arafat
 
 > [!CAUTION]
 > All rights are reserved ©️ Mahmudul Hasan Sakib
